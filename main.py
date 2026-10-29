@@ -349,7 +349,12 @@ def get_portfolio_data(portfolio_id: int, db: Session = Depends(get_db)):
             current_price = data["manual_price"]
             prev_close = current_price
         else:
-            current_price = info["price"]
+            tk_formatted = format_ticker(tk)
+    # Перезапрашиваем info с отформатированным тикером если нужно
+    try:
+        current_price = yf.Ticker(tk_formatted).info.get("regularMarketPrice") or yf.Ticker(tk_formatted).info.get("currentPrice") or info.get("price", 0)
+    except:
+        current_price = info.get("price", 0)
             if current_price == 0:
                 current_price = avg_price
             prev_close = info["prev_close"]
