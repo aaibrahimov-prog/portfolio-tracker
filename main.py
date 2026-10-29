@@ -17,7 +17,7 @@ def get_crypto_price_fallback(ticker: str) -> float:
 
     # Резервный вариант через CoinGecko (поиск по символу)
     try:
-        mapping = {"SUI": "sui", "BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana", "XRP": "ripple", "ADA": "cardano", "DOGE": "dogecoin"}
+        mapping = {"SUI": "sui", "BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana", "XRP": "ripple", "ADA": "cardano", "DOGE": "dogecoin", "AVAX": "avalanche-2", "NEAR": "near"}
         coin_id = mapping.get(clean_tk, clean_tk.lower())
         url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd"
         res = requests.get(url, timeout=3)
