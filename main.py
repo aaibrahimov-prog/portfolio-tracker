@@ -1,3 +1,11 @@
+
+def format_ticker(ticker: str) -> str:
+    ticker = str(ticker).strip().upper()
+    crypto = ['SUI', 'BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK']
+    if ticker in crypto and not ticker.endswith('-USD'):
+        return f'{ticker}-USD'
+    return ticker
+
 from fastapi import FastAPI, Depends, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
