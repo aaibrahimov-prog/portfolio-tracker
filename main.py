@@ -1,20 +1,4 @@
 
-def get_price_smart(ticker: str) -> float:
-    clean_tk = ticker.replace('-USD', '').replace('-USDT', '').strip().upper()
-    crypto_symbols = ['SUI', 'BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'NEAR', 'DOT', 'LINK']
-    
-    if clean_tk in crypto_symbols or '-USD' in ticker.upper() or 'USDT' in ticker.upper():
-        price = get_crypto_price_fallback(clean_tk)
-        if price > 0:
-            return price
-            
-    # Если это акция или фондовый рынок — запрашиваем yfinance
-    try:
-        t = yf.Ticker(ticker)
-        return t.info.get('regularMarketPrice') or t.info.get('currentPrice') or 0.0
-    except:
-        return 0.0
-
 import requests
 
 def get_crypto_price_fallback(ticker: str) -> float:
@@ -108,52 +92,23 @@ def fetch_crypto_price_from_exchanges(symbol: str):
     return None
 
 def get_asset_info(ticker: str):
-    tk_upper = ticker.upper().strip()
+    clean_tk = str(ticker).replace('-USD', '').replace('-USDT', '').strip().upper()
+    crypto_list = ["SUI", "BTC", "ETH", "SOL", "XRP", "ADA", "DOGE", "AVAX", "NEAR", "DOT", "LINK", "MATIC", "UNI", "ATOM"]
     
-    if tk_upper in ["USD", "USDT", "USDC", "FDUSD", "EUR", "AZN"]:
-        return {"price": 1.0, "prev_close": 1.0}
-
-    now = time.time()
-    if tk_upper in price_cache:
-        cached = price_cache[tk_upper]
-        if now - cached["time"] < CACHE_TTL:
-            return {"price": cached["price"], "prev_close": cached["prev_close"]}
-
-    crypto_data = fetch_crypto_price_from_exchanges(tk_upper)
-    if crypto_data and crypto_data["price"] > 0:
-        price_cache[tk_upper] = {**crypto_data, "time": now}
-        return crypto_data
-
-    # Не ищем крипто-суффиксы для стандартных тикеров акций
-    variants = [tk_upper]
-
-    for v in variants:
-        try:
-            data = yf.Ticker(v)
-            price = data.fast_info.last_price
-            prev_close = data.fast_info.previous_close
-
-            if price is not None and price > 0:
-                if prev_close is None or prev_close <= 0:
-                    prev_close = price
-                res = {"price": round(float(price), 4), "prev_close": round(float(prev_close), 4)}
-                price_cache[tk_upper] = {**res, "time": now}
-                return res
-
-            df = data.history(period="2d")
-            if not df.empty and len(df) >= 1:
-                price = df['Close'].iloc[-1]
-                prev_close = df['Close'].iloc[-2] if len(df) >= 2 else price
-                if price > 0:
-                    res = {"price": round(float(price), 4), "prev_close": round(float(prev_close), 4)}
-                    price_cache[tk_upper] = {**res, "time": now}
-                    return res
-        except Exception:
-            continue
-    
-    res = {"price": 0.0, "prev_close": 0.0}
-    price_cache[tk_upper] = {**res, "time": now}
-    return res
+    if clean_tk in crypto_list or '-USD' in str(ticker).upper() or 'USDT' in str(ticker).upper():
+        p = get_crypto_price_fallback(ticker)
+        if p > 0:
+            return {"price": p, "prev_close": p}
+            
+    # Оригинальная логика для остальных активов через yfinance
+    try:
+        t = yf.Ticker(format_ticker(ticker))
+        inf = t.info
+        pr = inf.get('regularMarketPrice') or inf.get('currentPrice') or inf.get('price', 0.0)
+        prv = inf.get('previousClose') or pr
+        return {"price": pr, "prev_close": prv}
+    except:
+        return {"price": 0.0, "prev_close": 0.0}
 
 def get_usd_to_azn_rate() -> float:
     try:
