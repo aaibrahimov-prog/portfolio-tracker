@@ -1,4 +1,36 @@
 
+import requests
+
+def get_crypto_price_fallback(ticker: str) -> float:
+    clean_tk = ticker.replace('-USD', '').replace('-USDT', '').strip().upper()
+    
+    # Пробуем Binance (пара со спотового рынка к USDT)
+    try:
+        url = f"https://api.binance.com/api/v3/ticker/price?symbol={clean_tk}USDT"
+        res = requests.get(url, timeout=3)
+        if res.status_code == 200:
+            data = res.json()
+            if "price" in data:
+                return float(data["price"])
+    except:
+        pass
+
+    # Резервный вариант через CoinGecko (поиск по символу)
+    try:
+        mapping = {"SUI": "sui", "BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana", "XRP": "ripple", "ADA": "cardano", "DOGE": "dogecoin"}
+        coin_id = mapping.get(clean_tk, clean_tk.lower())
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd"
+        res = requests.get(url, timeout=3)
+        if res.status_code == 200:
+            data = res.json()
+            if coin_id in data and "usd" in data[coin_id]:
+                return float(data[coin_id]["usd"])
+    except:
+        pass
+        
+    return 0.0
+
+
 def format_ticker(ticker: str) -> str:
     ticker = str(ticker).strip().upper()
     crypto = ['SUI', 'BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK']
