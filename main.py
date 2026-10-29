@@ -1,4 +1,20 @@
 
+def get_price_smart(ticker: str) -> float:
+    clean_tk = ticker.replace('-USD', '').replace('-USDT', '').strip().upper()
+    crypto_symbols = ['SUI', 'BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'NEAR', 'DOT', 'LINK']
+    
+    if clean_tk in crypto_symbols or '-USD' in ticker.upper() or 'USDT' in ticker.upper():
+        price = get_crypto_price_fallback(clean_tk)
+        if price > 0:
+            return price
+            
+    # Если это акция или фондовый рынок — запрашиваем yfinance
+    try:
+        t = yf.Ticker(ticker)
+        return t.info.get('regularMarketPrice') or t.info.get('currentPrice') or 0.0
+    except:
+        return 0.0
+
 import requests
 
 def get_crypto_price_fallback(ticker: str) -> float:
@@ -96,11 +112,13 @@ def get_asset_info(ticker: str):
     crypto_list = ["SUI", "BTC", "ETH", "SOL", "XRP", "ADA", "DOGE", "AVAX", "NEAR", "DOT", "LINK", "MATIC", "UNI", "ATOM"]
     
     if clean_tk in crypto_list or '-USD' in str(ticker).upper() or 'USDT' in str(ticker).upper():
-        p = get_crypto_price_fallback(ticker)
-        if p > 0:
-            return {"price": p, "prev_close": p}
+        try:
+            p = get_crypto_price_fallback(ticker)
+            if p > 0:
+                return {"price": p, "prev_close": p}
+        except:
+            pass
             
-    # Оригинальная логика для остальных активов через yfinance
     try:
         t = yf.Ticker(format_ticker(ticker))
         inf = t.info
@@ -109,7 +127,6 @@ def get_asset_info(ticker: str):
         return {"price": pr, "prev_close": prv}
     except:
         return {"price": 0.0, "prev_close": 0.0}
-
 def get_usd_to_azn_rate() -> float:
     try:
         data = yf.Ticker("USDAZN=X")
@@ -358,11 +375,11 @@ def get_portfolio_data(portfolio_id: int, db: Session = Depends(get_db)):
         current_price = yf.Ticker(tk_formatted).info.get("regularMarketPrice") or yf.Ticker(tk_formatted).info.get("currentPrice") or info.get("price", 0)
     except:
         current_price = info.get("price", 0)
-            if current_price == 0:
-                current_price = avg_price
-            prev_close = info["prev_close"]
-            if prev_close == 0:
-                prev_close = current_price
+        if current_price == 0:
+            current_price = avg_price
+        prev_close = info["prev_close"]
+        if prev_close == 0:
+            prev_close = current_price
 
         current_val = qty * current_price
         prev_val = qty * prev_close
