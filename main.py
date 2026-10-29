@@ -1,4 +1,20 @@
 
+def get_price_smart(ticker: str) -> float:
+    clean_tk = ticker.replace('-USD', '').replace('-USDT', '').strip().upper()
+    crypto_symbols = ['SUI', 'BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'NEAR', 'DOT', 'LINK']
+    
+    if clean_tk in crypto_symbols or '-USD' in ticker.upper() or 'USDT' in ticker.upper():
+        price = get_crypto_price_fallback(clean_tk)
+        if price > 0:
+            return price
+            
+    # Если это акция или фондовый рынок — запрашиваем yfinance
+    try:
+        t = yf.Ticker(ticker)
+        return t.info.get('regularMarketPrice') or t.info.get('currentPrice') or 0.0
+    except:
+        return 0.0
+
 import requests
 
 def get_crypto_price_fallback(ticker: str) -> float:
