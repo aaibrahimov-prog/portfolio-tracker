@@ -143,7 +143,12 @@ def get_usd_to_azn_rate() -> float:
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db)):
     portfolios = db.query(Portfolio).all()
-    return templates.TemplateResponse(request=request, name="index.html", context={"portfolios": portfolios})
+    global_summary = get_global_summary(db)
+    portfolios_full = []
+    for p in portfolios:
+        p_data = get_portfolio_data(p.id, db)
+        portfolios_full.append({"id": p.id, "name": p.name, "description": p.description, "data": p_data})
+    return templates.TemplateResponse(request=request, name="index.html", context={"portfolios": portfolios, "portfolios_full": portfolios_full, "global_summary": global_summary})
 
 @app.get("/api/portfolios_full")
 def get_portfolios_full(db: Session = Depends(get_db)):
